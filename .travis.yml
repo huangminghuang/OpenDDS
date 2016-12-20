@@ -1,137 +1,229 @@
+## "sudo: true" environment is much slower than the "sudo: false" environment even though it provides larger memory.
 sudo: false
+dist: trusty
 language: cpp
 
-compiler:
-  - gcc
-
-env:
-  matrix:
-    - FUZZ=1 STATIC=1 XERCES3=1 NO_TESTS=1
-    - NO_INLINE=1 NO_BIT=1
-    - NO_INLINE=1 VERSIONED_NS=1 DDS_SECURITY=1
-    - NO_DEBUG=1 NO_TESTS=1
-    - SAFETY_PROFILE=1
-    - NO_INLINE=1 USES_WCHAR=1
-    - NO_INLINE=1 NO_MULTITOPIC=1 XERCES3=1
-  global:
-    - ACE_ROOT=$TRAVIS_BUILD_DIR/ACE_TAO/ACE
-    - TAO_ROOT=$TRAVIS_BUILD_DIR/ACE_TAO/TAO
-    - DDS_ROOT=$TRAVIS_BUILD_DIR
-    - MPC_ROOT=$TRAVIS_BUILD_DIR/ext/MPC
-    - LD_LIBRARY_PATH=$ACE_ROOT/lib:$DDS_ROOT/lib:$LD_LIBRARY_PATH
-    - COMPILER=g++-8
-
-matrix:
-  include:
-    - compiler: gcc
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - libxerces-c-dev
-            - g++-6
-            - openjdk-7-jdk
-      env: COMPILER=g++-6 USE_JAVA=1 NO_DEBUG=1 NO_TESTS=1
-    - compiler: clang
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-trusty-5.0
-          packages:
-            - libxerces-c-dev
-            - clang++-5.0
-      env: COMPILER=clang++-5.0 NO_INLINE=1
-    - compiler: clang
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-trusty-6.0
-          packages:
-            - libxerces-c-dev
-            - clang++-6.0
-      env: COMPILER=clang++-6.0 NO_INLINE=1
-    - compiler: gcc
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - libxerces-c-dev
-            - g++-6
-      env: COMPILER=g++-6 NO_INLINE=1
-    - compiler: gcc
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - libxerces-c-dev
-            - g++-7
-      env: COMPILER=g++-7 NO_INLINE=1
-    - os: osx
-      osx_image: xcode9.1
-      compiler: clang
-      env: COMPILER=clang++ NO_INLINE=1
-
-addons:
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-    packages:
-      - libxerces-c-dev
-      - libssl-dev
-      - g++-8
-
+cache: pip
 before_install:
-  - mkdir ext
-  - cd ext && git clone --depth 1 git://github.com/DOCGroup/MPC.git
-  - cd .. && git clone --depth 1 git://github.com/DOCGroup/ACE_TAO.git
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+      mkdir $HOME/usr;
+      export PATH="$HOME/usr/bin:$PATH";
+      wget --no-check-certificate https://cmake.org/files/v3.9/cmake-3.9.6-Linux-x86_64.sh;
+      bash ./cmake-3.9.6-Linux-x86_64.sh --prefix=$HOME/usr --exclude-subdir --skip-license;
+      rm ./cmake-3.9.6-Linux-x86_64.sh;
+      pip install --user awscli glob2;
+    fi
 
 branches:
   only:
-    - master
+    - cmake
 
 before_script:
   - export
   - if [ "$FUZZ" == "1" ]; then
-        rm -rf tools/modeling/plugins tools/IntermediateTypeLang/cpp/rapidjson tests/googletest;
-        perl $DDS_ROOT/tools/scripts/dds_fuzz.pl;
+        tar czf modeling_plugins.tar.gz tools/modeling/plugins;
+        rm -rf tools/modeling/plugins tools/IntermediateTypeLang/cpp/rapidjson;
+        perl tools/scripts/dds_fuzz.pl;
+        tar xzf modeling_plugins.tar.gz;
+        rm modeling_plugins.tar.gz;
     fi
-  - if [ "$NO_INLINE" == "1" ]; then CONFIG_OPTIONS+=" --no-inline"; fi
-  - if [ "$NO_BIT" == "1" ]; then CONFIG_OPTIONS+=" --no-built-in-topics"; fi
-  - if [ "$STATIC" == "1" ]; then CONFIG_OPTIONS+=" --static"; fi
-  - if [ "$NO_DEBUG" == "1" ]; then CONFIG_OPTIONS+=" --no-debug --optimize"; fi
-  - if [ "$SAFETY_PROFILE" == "1" ]; then CONFIG_OPTIONS+=" --safety-profile"; fi
-  - if [ "$NO_MULTITOPIC" == "1" ]; then CONFIG_OPTIONS+=" --no-multi-topic"; fi
-  - if [ "$USE_JAVA" == "1" ]; then CONFIG_OPTIONS+=" --java"; fi
-  - if [ "$NO_TESTS" == "1" ]; then CONFIG_OPTIONS+=" --no-tests"; fi
-  - if [ "$USES_WCHAR" == "1" ]; then CONFIG_OPTIONS+=" --features=uses_wchar=1"; fi
-  - if [ "$XERCES3" == "1" ]; then CONFIG_OPTIONS+=" --xerces3"; fi
-  - if [ "$CXX" == "g++" ]; then CONFIG_OPTIONS+=" --macros=c++11=1"; fi
-  - if [ "$VERSIONED_NS" == 1 ]; then CONFIG_OPTIONS+=" --features=versioned_namespace=1"; fi
-  - if [ "$DDS_SECURITY" == 1 ]; then CONFIG_OPTIONS+=" --security"; fi
-  - ./configure --mpcopts="-workers 2" --compiler=$COMPILER $CONFIG_OPTIONS
-  - tools/scripts/show_build_config.pl
-  - if [ "$SAFETY_PROFILE" == "1" ]; then
-        export LD_LIBRARY_PATH+=:$TRAVIS_BUILD_DIR/build/target/ACE_TAO/ACE/lib:$TRAVIS_BUILD_DIR/build/target/lib;
+  - if [ "$MATRIX_NAME" == "NoInline" ]; then
+      BUILD_FLAGS="$BUILD_FLAGS -DACE_INLINE=OFF";
     fi
-
-script:
-  - travis_wait 45 make -s -j 6
-  - if [ "$SAFETY_PROFILE" == "1" ]; then
-        cd build/target/tests/DCPS/Messenger && ./run_test.pl rtps_disc;
-        cd $DDS_ROOT/build/target/tests/FACE/Messenger;
-        ./run_test.pl;
-        ./run_test.pl callback;
-        ./run_test.pl static;
-        ./run_test.pl static callback;
-    elif [ "$USE_JAVA" == "1" ]; then
-        cd java/tests/messenger;
-        ./run_test.pl tcp;
-        ./run_test.pl rtps;
+  - if [ "$MATRIX_NAME" == "Static" ]; then
+      BUILD_FLAGS="$BUILD_FLAGS -DBUILD_SHARED_LIBS=OFF";
+    fi
+  - if [ "$DEBUG" == "0" ]; then
+      BUILD_FLAGS="$BUILD_FLAGS -DCMAKE_BUILD_TYPE=RELEASE";
     else
-        cd tests/DCPS/Messenger && ./run_test.pl all;
+      BUILD_FLAGS="$BUILD_FLAGS -DCMAKE_BUILD_TYPE=DEBUG";
     fi
+  - if [ "$MATRIX_NAME" == "WChar" ]; then
+      BUILD_FLAGS="$BUILD_FLAGS -DACE_USES_WCHAR=ON";
+    fi
+  - if [ "$MATRIX_NAME" == "NoBit" ]; then
+      DDS_BUILD_FLAGS="$DDS_BUILD_FLAGS -DOPENDDS_HAS_BUILT_IN_TOPICS=OFF";
+      ACE_TAO_MATRIX="Debug";
+    fi
+  - if [ "$MATRIX_NAME" == "NoMultiTopic" ]; then
+      DDS_BUILD_FLAGS="$DDS_BUILD_FLAGS -DOPENDDS_HAS_MULTI_TOPIC=OFF";
+      ACE_TAO_MATRIX="Debug";
+    fi
+  - if [ "$JAVA" == "0" ]; then
+      DDS_BUILD_FLAGS="$DDS_BUILD_FLAGS -DCMAKE_DISABLE_FIND_PACKAGE_JAVA=TRUE";
+    fi
+  - if [ "$MATRIX_NAME" == "SafetyBase" ]; then
+         DDS_BUILD_FLAGS="$DDS_BUILD_FLAGS -DOPENDDS_SAFETY_PROFILE=BASE -DACE_FACE_DEV=ON";
+         BUILD_ACE_TAO=1;
+    fi
+  - if [ "$MATRIX_NAME" == "Android" ]; then
+      BUILD_FLAGS="$BUILD_FLAGS -DCMAKE_SYSTEM_NAME=Android -DCMAKE_SYSTEM_VERSION=21 -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY";
+      BUILD_ACE_TAO=1;
+    fi
+  - if [ "$MATRIX_NAME" == "ASan" ]; then
+      BUILD_FLAGS="$BUILD_FLAGS -DSANITIZE_ADDRESS=ON";
+    fi
+  - if [ "$BUILD_ACE_TAO" != "1" ] && [ -z "$ACE_TAO_MATRIX" ]; then
+      ACE_TAO_MATRIX=$MATRIX_NAME;
+    fi
+  ## we need to disable ccahe explicitly because it is installed in the travis ci environment but the environment
+  ## does not have enough disk space or network bandwidth to cache all OpenDDS object code
+  - export BUILD_FLAGS="$BUILD_FLAGS -DCCACHE=OFF -DACE_UNITY_BUILD=ON"
+  ##
+  - export DDS_BUILD_FLAGS="$DDS_BUILD_FLAGS -DACE_TAO_SOURCE_DIR=$ACE_TAO_SOURCE_DIR $BUILD_FLAGS"
+  - if [ -n "$ACE_TAO_MATRIX" ]; then
+      aws s3 cp s3://com.ociweb.opendds/artifacts/ace-tao-cmake-${ACE_TAO_MATRIX}.tar.gz ..;
+      DDS_BUILD_FLAGS="$DDS_BUILD_FLAGS -DTAO_DIR=$PWD/../ACE_TAO/build/TAO";
+      tar zxf ../ace-tao-cmake-${ACE_TAO_MATRIX}.tar.gz -C ..;
+    else
+      git clone --recursive -b cmake --depth 1 git://github.com/huangminghuang/ACE_TAO.git;
+    fi
+jobs:
+  _build-staging: &build-staging
+    stage: build
+    addons: &gcc-addons
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+        packages:
+          - libxerces-c-dev
+          - ninja-build
+          - g++-6
+    install:
+      ## using gold is required for ASan build
+      - export CXX="g++-6"
+      - export CC="gcc-6"
+    script:
+      - echo DDS_BUILD_FLAGS=$DDS_BUILD_FLAGS
+      - cmake -GNinja -H. -Bbuild $DDS_BUILD_FLAGS
+      - cmake --build build -- -j 4
+    after_success:
+      - echo $TRAVIS_COMMIT > build/OpenDDS.commit
+      - echo "-b $TRAVIS_BRANCH $(git remote get-url origin)"> build/OpenDDS.clone_loc
+      - if [ -n "$ACE_TAO_MATRIX" ]; then
+          cp ../ACE_TAO/build/ACE_TAO.clone_loc ../ACE_TAO/build/ACE_TAO.commit build/;
+        else
+          echo "-b $(git --git-dir=ACE_TAO/.git symbolic-ref --short HEAD) $(git --git-dir=ACE_TAO/.git remote get-url origin)" > build/ACE_TAO.clone_loc;
+          git --git-dir=ACE_TAO/.git rev-parse HEAD > build/ACE_TAO.commit;
+        fi
+      - tar --exclude='*.o' -czf build.tar.gz build
+      - aws s3 cp build.tar.gz s3://com.ociweb.opendds/artifacts/${TRAVIS_BRANCH}-${MATRIX_NAME}-${TRAVIS_BUILD_NUMBER}.tar.gz
+
+  _test-staging: &test-staging
+    stage: test
+    addons: *gcc-addons
+    script:
+      - aws s3 cp s3://com.ociweb.opendds/artifacts/${TRAVIS_BRANCH}-${MATRIX_NAME}-${TRAVIS_BUILD_NUMBER}.tar.gz build.tar.gz
+      - tar zxf build.tar.gz
+      - cd build && ctest -j 6 --timeout 180
+    after_failure:
+      - echo You can debug this build using \"docker run -it huangminghuang/opendds-travis-build ${TRAVIS_BRANCH}-${MATRIX_NAME}-${TRAVIS_BUILD_NUMBER}\"
+      - if [ -f "Testing/Temporary/LastTestsFailed.log" ]; then
+          cat Testing/Temporary/LastTestsFailed.log | while read line; do
+            echo "${line#*:} => http://com.ociweb.opendds.s3-website-us-east-1.amazonaws.com/tests/${TRAVIS_JOB_NUMBER/.//}/${line%:*}.txt";
+          done;
+        fi
+    after_script:
+      - export TRAVIS_BUILD_JOB_DIR=${TRAVIS_JOB_NUMBER/.//}
+      - $TRAVIS_BUILD_DIR/ctestlog2json.py --generated_url_prefix=http://com.ociweb.opendds.s3-website-us-east-1.amazonaws.com/tests/${TRAVIS_BUILD_JOB_DIR}
+                                           --output_dir=travis_tests/${TRAVIS_BUILD_JOB_DIR}
+                                           --matrix=${MATRIX_NAME}
+      - ACE_TAO_COMMIT=$(cat ACE_TAO.commit)
+      - COMMIT_DATE=$(TZ=UTC git --git-dir=../.git show --quiet --date='format-local:%Y-%m-%dT%H:%M:%SZ' --format="%cd")
+      - |
+        printf '{"date": "%s", "message": "%s", "opendds_commit": "%s", "ace_tao_commit": "%s", "pull_request": %s ,"travis_build": %s}\n' "${COMMIT_DATE}" "${TRAVIS_COMMIT_MESSAGE}" "${TRAVIS_COMMIT}" "${ACE_TAO_COMMIT}" "${TRAVIS_PULL_REQUEST}" "${TRAVIS_BUILD_NUMBER}" >  travis_tests/${TRAVIS_BUILD_NUMBER}/commit.json
+      - aws s3 sync --quiet travis_tests/${TRAVIS_BUILD_NUMBER} s3://com.ociweb.opendds/tests/${TRAVIS_BUILD_NUMBER}
+      - aws s3 sync --quiet --exclude "*" --include "*/${TRAVIS_COMMIT}.json" s3://com.ociweb.opendds/tests travis_tests/
+      - |
+        $TRAVIS_BUILD_DIR/testjson2html.py > travis_tests/${TRAVIS_BUILD_NUMBER}/test_summary.html
+      - aws s3 cp travis_tests/${TRAVIS_BUILD_NUMBER}/test_summary.html s3://com.ociweb.opendds/tests/${TRAVIS_BUILD_NUMBER}/
+      - echo Test summary is available at http://com.ociweb.opendds.s3-website-us-east-1.amazonaws.com/tests/${TRAVIS_BUILD_NUMBER}/test_summary.html
+  _clang-Env: &clang-Env
+    addons:
+      apt:
+         sources:
+           - llvm-toolchain-trusty-5.0
+         packages:
+           - libxerces-c-dev
+           - ninja-build
+           - clang++-5.0
+           - lld-5.0
+    install:
+      - export CXX=clang++-5.0
+      - export CC=clang-5.0
+      - export LDFLAGS='-fuse-ld=lld-5.0'
+      - export BUILD_ACE_TAO=1
+  _android-Env: &android-Env
+    env: "MATRIX_NAME=Android"
+    install:
+      - export ANDROID_NDK=$HOME/usr/android-ndk
+      - git clone -b strip --depth=1 git://github.com/urho3d/android-ndk.git $ANDROID_NDK
+
+  _macOS-Env: &macos-Env
+    os: osx
+    osx_image: xcode9
+    install:
+      - brew update
+      - brew install ninja awscli
+      - export CXX=c++
+      - pip2 install glob2
+    env: "MATRIX_NAME=MacOS"
+
+  include:
+    ## Build stages are sorted on the build times to minimize the total completion time
+    - <<: *build-staging
+      <<: *macos-Env
+    - <<: *build-staging
+      env: &Release-Env "MATRIX_NAME=Release DEBUG=0"
+    - <<: *build-staging
+      env: &NoInline-Env "MATRIX_NAME=NoInline DEBUG=1"
+    - <<: *build-staging
+      env: &Debug-Env "MATRIX_NAME=Debug DEBUG=1"
+    - <<: *build-staging
+      ## static debug build would cause out of disk space error on travis ci
+      env: &Static-Env "MATRIX_NAME=Static DEBUG=0"
+    - <<: *build-staging
+      <<: *android-Env
+    - <<: *build-staging
+      env: &NoBit-Env "MATRIX_NAME=NoBit"
+    - <<: *build-staging
+      env: &NoMultiTopic-Env "MATRIX_NAME=NoMultiTopic"
+    - <<: *build-staging
+      env: &WChar-Env "MATRIX_NAME=WChar"
+    - <<: *build-staging
+      <<: *clang-Env
+      env: "MATRIX_NAME=Clang"
+    - <<: *build-staging
+      <<: *clang-Env
+      env: "MATRIX_NAME=ASan"
+      # ASAN requires ptrace which is disabled in containers (https://github.com/travis-ci/travis-ci/issues/9033)
+      sudo: true
+    - <<: *build-staging
+      env: &SafetyBase-Env "MATRIX_NAME=SafetyBase"
+
+    - <<: *test-staging
+      <<: *macos-Env
+    - <<: *test-staging
+      env: *Release-Env
+    - <<: *test-staging
+      env: *Debug-Env
+    - <<: *test-staging
+      env: *NoInline-Env
+    - <<: *test-staging
+      <<: *clang-Env
+      env: "MATRIX_NAME=Clang"
+    - <<: *test-staging
+      <<: *clang-Env
+      env: "MATRIX_NAME=ASan"
+      # ASAN requires ptrace which is disabled in containers (https://github.com/travis-ci/travis-ci/issues/9033)
+      sudo: true
+    - <<: *test-staging
+      env: *NoBit-Env
+    - <<: *test-staging
+      env: *Static-Env
+    - <<: *test-staging
+      env: *WChar-Env
+    - <<: *test-staging
+      env: *SafetyBase-Env
+    - <<: *test-staging
+      env: *NoMultiTopic-Env

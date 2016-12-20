@@ -1,0 +1,81 @@
+
+project(ishapes CXX)
+cmake_minimum_required(VERSION 3.3)
+
+if (NOT OpenDDS_INCLUDE_DIR)
+  find_package(OpenDDS REQUIRED CONFIG)
+endif()
+
+
+find_package(Qt4)
+ace_requires(QT4_FOUND)
+
+
+include(CheckCXXSourceCompiles)
+check_cxx_source_compiles(
+  "int main() {
+   #if __cplusplus<201103L
+   #error Not C++11
+   #endif
+    return 0;
+  }
+  "
+  HAS_CPP11
+)
+
+if (NOT HAS_CPP11)
+  find_package(Boost)
+  if (NOT Boost_FOUND)
+    message("Skipping ishapes because neither C++11 nor boost is found")
+    return()
+  endif(NOT Boost_FOUND)
+endif()
+
+
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+
+ace_add_exe(ishapes
+  OUTPUT_NAME ishapes
+  INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIRS}
+  LINK_LIBRARIES OpenDDS_Multicast
+                 Qt4::QtGui
+                 OpenDDS_Tcp
+                 OpenDDS_Udp
+                 OpenDDS_Default_Discovery
+                 OpenDDS_Rtps_Udp
+  UNITY_CXX_MINIMUM_PARTITIONS 2
+)
+ace_target_cxx_sources(ishapes
+  SOURCE_FILES Circle.cpp
+               FilterDialog.cpp
+               ReaderQosDialog.cpp
+               Shape.cpp
+               ShapeDynamics.cpp
+               ShapesWidget.cpp
+               Square.cpp
+               Triangle.cpp
+               WriterQosDialog.cpp
+               main.cpp
+               ###
+               BouncingShapeDynamics.cpp
+               ShapesDialog.cpp
+               DDSShapeDynamics.cpp
+)
+
+dds_idl_sources(
+  TARGETS ishapes
+  IDL_FILES ShapeType.idl
+)
+
+ace_target_qt_sources(ishapes
+  UI_FILES filterForm.ui
+           iShapesForm.ui
+           qosForm.ui
+           readerQosForm.ui
+           writerQosForm.ui
+  RESOURCE_FILES ishape.qrc
+)

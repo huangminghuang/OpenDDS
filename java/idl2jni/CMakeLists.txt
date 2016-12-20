@@ -1,0 +1,5 @@
+add_subdirectory(codegen)
+ace_requires("BUILD_SHARED_LIBS")
+add_subdirectory(compact)
+add_subdirectory(runtime)
+add_subdirectory(tests/simple)

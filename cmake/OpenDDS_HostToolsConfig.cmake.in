@@ -1,0 +1,15 @@
+set(OpenDDS_HostTools_DIR ${CMAKE_CURRENT_LIST_DIR})
+
+include(${OpenDDS_HostTools_DIR}/OpenDDS_HostTools_Targets.cmake)
+
+if (NOT TARGET TAO_IDL_EXE)
+  include(@TAO_HOSTTOOLS_DIR@/TAO_HostTools_Targets.cmake)
+endif()
+
+set(OpenDDS_HostTools_FOUND 1)
+foreach(target opendds_idl TAO_IDL_EXE ace_gperf)
+  if(NOT TARGET ${target})
+    set(OpenDDS_HostTools_FOUND 0)
+    return()
+  endif()
+endforeach()

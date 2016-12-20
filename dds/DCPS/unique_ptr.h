@@ -10,7 +10,7 @@
 
 #include "ace/config-lite.h"
 
-#ifdef ACE_HAS_CPP11
+#if defined(ACE_HAS_CPP11) && !defined(OPENDDS_USE_UNIQUE_PTR_EMULATION)
 #define HAS_STD_UNIQUE_PTR
 #endif
 
@@ -45,6 +45,7 @@ struct EnableContainerSupportedUniquePtr {};
 
 #else //HAS_STD_UNIQUE_PTR
 
+// The foloowing are used to emulate unique_ptr in C++03.
 template <typename T>
 class rv : public T {
   rv();
@@ -151,6 +152,10 @@ void swap(unique_ptr<T, Deleter>& a, unique_ptr<T, Deleter>& b) // never throws
   return a.swap(b);
 }
 
+// C++03 standard containers do not support move sematic; therefore, the regular unique_ptr
+// couldn't be stored inside standard containers. The container_supported_unique_ptr is used
+// to circumvent the restriction by using reference counting when it is doing inserting/erasing
+// operations for the enclosing containers.
 template <typename T>
 class container_supported_unique_ptr
 {

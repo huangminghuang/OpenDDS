@@ -32,12 +32,18 @@ unlink $dcpsrepo_ior;
 
 my $DCPSREPO = PerlDDS::create_process ("$DDS_ROOT/bin/DCPSInfoRepo",
                "-DCPSDebugLevel 10 ".
-               "-ORBListenEndpoints iiop://127.0.0.1:1111 -ORBDebugLevel 10 ".
+               "-ORBListenEndpoints iiop://127.0.0.1:1112 -ORBDebugLevel 10 ".
                "-ORBLogFile DCPSInfoRepo.log $opts -o $dcpsrepo_ior ");
 
 PerlACE::add_lib_path ("$DDS_ROOT/java/tests/complex_idl");
+if ($PerlACE::Process::ExeSubDir ne "./") {
+  PerlACE::add_lib_path("$DDS_ROOT/java/tests/complex_idl/$PerlACE::Process::ExeSubDir");
+}
 
-my $TEST = new PerlDDS::Process_Java ("ComplexIDLTest", $test_opts);
+my $classes = [];
+$classes = [ 'complex_idl_test.jar' ] if -r 'complex_idl_test.jar';
+
+my $TEST = new PerlDDS::Process_Java ("ComplexIDLTest", $test_opts, $classes);
 
 $DCPSREPO->Spawn ();
 if (PerlACE::waitforfile_timed ($dcpsrepo_ior, 30) == -1) {

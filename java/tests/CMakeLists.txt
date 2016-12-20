@@ -1,0 +1,10 @@
+ace_requires("TARGET OpenDDS_DCPS_Java")
+
+add_subdirectory(hello)
+add_subdirectory(transport_config)
+add_subdirectory(two_idl)
+add_subdirectory(messenger)
+add_subdirectory(builtintopics)
+add_subdirectory(zerocopy)
+add_subdirectory(complex_idl)
+add_subdirectory(multirepo)

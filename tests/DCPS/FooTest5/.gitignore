@@ -1,3 +1,5 @@
 /publisher
 /subscriber
 *.txt
+!CMakeLists.txt
+

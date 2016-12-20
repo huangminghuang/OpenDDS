@@ -2,6 +2,8 @@ eval '(exit $?0)' && eval 'exec perl -S $0 ${1+"$@"}'
     & eval 'exec perl -S $0 $argv:q'
     if 0;
 
+# -*- perl -*-
+
 use Env (DDS_ROOT);
 use lib "$DDS_ROOT/bin";
 use Env (ACE_ROOT);
@@ -10,7 +12,7 @@ use PerlDDS::Run_Test;
 use strict;
 
 if ($^O ne 'MSWin32' &&
-    (new PerlACE::ConfigList)->check_config('OPENDDS_SAFETY_PROFILE') &&
+    $PerlDDS::SafetyProfile &&
     (new PerlACE::ConfigList)->check_config('SAFETY_BASE')) {
     system('$DDS_ROOT/tools/scripts/analyze_operator_new.sh $ACE_ROOT/lib/libACE.so $DDS_ROOT/lib/libOpenDDS_Corba.so $DDS_ROOT/lib/libOpenDDS_Dcps.so $DDS_ROOT/lib/libOpenDDS_Rtps.so $DDS_ROOT/lib/libOpenDDS_Rtps_Udp.so $DDS_ROOT/lib/libOpenDDS_FACE.so Idl/libFaceMessengerIdl.so Publisher/publisher Subscriber/subscriber | awk \'{ print "ERROR: Call to global operator new: " $2; }\'');
 }

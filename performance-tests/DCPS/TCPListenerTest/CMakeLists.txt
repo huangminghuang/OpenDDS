@@ -1,0 +1,59 @@
+ace_requires(OPENDDS_HAS_OWNERSHIP_PROFILE "NOT OPENDDS_SAFETY_PROFILE")
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+ace_add_exe(DCPS_Perf_TCPListener_Pub
+  OUTPUT_NAME publisher
+
+  LINK_LIBRARIES OpenDDS_Transports_For_Test
+                 DCPS_Perf_TypeNoKeyBounded
+                 OpenDDS_Default_Discovery
+)
+ace_target_cxx_sources(DCPS_Perf_TCPListener_Pub
+  SOURCE_FILES Writer.cpp
+               publisher.cpp
+  HEADER_FILES Writer.h
+               common.h
+)
+
+
+ace_add_exe(DCPS_Perf_TCPListener_Sub
+  OUTPUT_NAME subscriber
+
+  LINK_LIBRARIES OpenDDS_Transports_For_Test
+                 DCPS_Perf_TypeNoKeyBounded
+                 OpenDDS_Default_Discovery
+)
+ace_target_cxx_sources(DCPS_Perf_TCPListener_Sub
+  SOURCE_FILES DataReaderListener.cpp
+               subscriber.cpp
+  HEADER_FILES DataReaderListener.h
+               TestStats.h
+               common.h
+)
+
+include(${OpenDDS_INCLUDE_DIR}/cmake/dds_add_test.cmake)
+dds_configure_test_files()
+
+
+dds_add_test("performance-tests/DCPS/TCPListenerTest/run_test.pl -p 1 -s 1"
+  COMMAND run_test.pl -p 1 -s 1
+)
+
+
+dds_add_test("performance-tests/DCPS/TCPListenerTest/run_test.pl -p 1 -s 1 -c"
+  COMMAND run_test.pl -p 1 -s 1 -c
+)
+
+
+dds_add_test("performance-tests/DCPS/TCPListenerTest/run_test.pl -p 1 -s 4"
+  COMMAND run_test.pl -p 1 -s 4
+)
+
+
+dds_add_test("performance-tests/DCPS/TCPListenerTest/run_test.pl -p 2 -s 3"
+  COMMAND run_test.pl -p 2 -s 3
+)
+
+
+dds_add_test("performance-tests/DCPS/TCPListenerTest/run_test.pl -p 4 -s 1"
+  COMMAND run_test.pl -p 4 -s 1
+)

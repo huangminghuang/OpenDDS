@@ -87,6 +87,9 @@ sub print_file {
       print STDERR "\n<<<<<  end $file  >>>>>\n\n";
       close FILE;
   }
+  else {
+    print STDERR "Unable to open log file $file\n";
+  }
 }
 
 sub report_errors_in_file {
@@ -131,6 +134,12 @@ sub report_errors_in_file {
 my $config = new PerlACE::ConfigList;
 $PerlDDS::Coverage_Test = $config->check_config("Coverage");
 $PerlDDS::SafetyProfile = $config->check_config("OPENDDS_SAFETY_PROFILE");
+
+
+sub check_config {
+  my $option = shift;
+  return $config->check_config($option);
+}
 
 # used to prevent multiple special processes from running remotely
 $PerlDDS::Special_Process_Created = 0;

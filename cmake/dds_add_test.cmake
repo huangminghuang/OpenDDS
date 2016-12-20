@@ -1,0 +1,112 @@
+
+set(PERLACE_DIR ${ACE_INCLUDE_DIR}/bin)
+set(PERLDDS_DIR ${OpenDDS_BINARY_DIR}/bin)
+
+get_property(opendds_test_count GLOBAL PROPERTY opendds_test_count)
+if (NOT opendds_test_count)
+  set_property(GLOBAL PROPERTY opendds_test_count "230")
+endif()
+
+function(dds_configure_test_files)
+  file(GLOB files *.ini *.conf *.xml)
+  file(COPY ${files}
+       DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+  file(GLOB test_scripts RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.pl)
+  foreach(script ${test_scripts})
+    file(READ ${script} RUN_TEST_CONTENT)
+
+    foreach(replace_tuple ${ARGN})
+      if (${replace_tuple})
+        string(REPLACE ${${replace_tuple}} RUN_TEST_CONTENT "${RUN_TEST_CONTENT}")
+      endif()
+    endforeach()
+
+    string(REPLACE "\$ENV{DDS_ROOT}/bin" "${PERLDDS_DIR}" RUN_TEST_CONTENT "${RUN_TEST_CONTENT}")
+    string(REPLACE "\$ENV{ACE_ROOT}/bin" "${PERLACE_DIR}" RUN_TEST_CONTENT "${RUN_TEST_CONTENT}")
+    string(REPLACE "$DDS_ROOT/bin" "${PERLDDS_DIR}" RUN_TEST_CONTENT "${RUN_TEST_CONTENT}")
+    string(REPLACE "$ACE_ROOT/bin" "${PERLACE_DIR}" RUN_TEST_CONTENT "${RUN_TEST_CONTENT}")
+    string(REPLACE "use PerlDDS::Process_Java;" "use PerlDDS::Process_Java;\nPerlACE::add_lib_path(\"$DDS_ROOT/lib\");" RUN_TEST_CONTENT "${RUN_TEST_CONTENT}")
+    string(REPLACE "use PerlACE::TestTarget;" "use PerlACE::TestTarget;\n\$ENV{ACE_ROOT}=\"${ACE_INCLUDE_DIR}\";" RUN_TEST_CONTENT "${RUN_TEST_CONTENT}")
+
+    if (CMAKE_CURRENT_SOURCE_DIR MATCHES "tools/modeling/tests")
+      string(REPLACE "/model\");" "\");" RUN_TEST_CONTENT "${RUN_TEST_CONTENT}")
+    endif()
+
+    string(REPLACE "$DDS_ROOT/java/tests" "${OpenDDS_BINARY_DIR}/java/tests" RUN_TEST_CONTENT "${RUN_TEST_CONTENT}")
+
+    file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/${script}" "${RUN_TEST_CONTENT}")
+    if (UNIX)
+      execute_process(COMMAND chmod +x "${CMAKE_CURRENT_BINARY_DIR}/${script}")
+    endif(UNIX)
+  endforeach()
+endfunction()
+
+function(dds_add_test name)
+  set(multiValueArgs COMMAND REQUIRES LABELS RESOURCE_LOCK )
+  cmake_parse_arguments(_arg "NO_LOCK;RUN_SERIAL" "COST;TIMEOUT" "${multiValueArgs}" ${ARGN})
+
+  if (_arg_REQUIRES)
+    foreach(cond ${_arg_REQUIRES})
+      string(REPLACE " " ";" cond ${cond})
+      if (${cond})
+      else()
+        return()
+      endif()
+    endforeach()
+  endif(_arg_REQUIRES)
+
+  get_property(SKIPPED_TARGETS DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY ACE_CURRENT_SKIPPED_TARGETS)
+
+  if (SKIPPED_TARGETS)
+    return()
+  endif()
+
+  foreach(label ${_arg_LABELS})
+    if (";${TEST_EXCLUDE_LABELS};" MATCHES ";${label};")
+      message("excluding test: ${name}")
+      return()
+    endif()
+  endforeach()
+
+  if (ACE_MULTI_CONFIGURATION_GENERATOR)
+    list(LENGTH _arg_COMMAND command_len)
+    if (command_len EQUAL 1)
+      list(APPEND _arg_COMMAND -ExeSubDir "$<CONFIG>")
+    else()
+      list(INSERT _arg_COMMAND 1 -ExeSubDir "$<CONFIG>")
+    endif()
+  endif(ACE_MULTI_CONFIGURATION_GENERATOR)
+
+  if ((RTPS IN_LIST _arg_LABELS) OR (MCAST IN_LIST _arg_LABELS))
+    get_property(old_count GLOBAL PROPERTY opendds_test_count)
+    math( EXPR new_count "${old_count}+1" )
+    set_property(GLOBAL PROPERTY opendds_test_count "${new_count}")
+    set(port_setting "OPENDDS_RTPS_DEFAULT_D0=${new_count}")
+  endif()
+
+  string(REPLACE " " "__" name "${name}")
+  add_test(NAME "${name}"
+           COMMAND ${CMAKE_COMMAND} -E env ${port_setting} perl ${_arg_COMMAND}
+  )
+
+  set_tests_properties("${name}" PROPERTIES
+    LABELS "${_arg_LABELS}"
+    COST "${_arg_COST}"
+    RUN_SERIAL "${_arg_RUN_SERIAL}"
+  )
+
+  if (NOT _arg_NO_LOCK)
+    list(APPEND _arg_RESOURCE_LOCK "${CMAKE_CURRENT_LIST_FILE}")
+
+    set_tests_properties("${name}" PROPERTIES
+      RESOURCE_LOCK "${_arg_RESOURCE_LOCK}"
+    )
+  endif()
+
+  if (_arg_TIMEOUT)
+    set_tests_properties("${name}" PROPERTIES
+      TIMEOUT "${_arg_TIMEOUT}"
+    )
+  endif()
+endfunction()

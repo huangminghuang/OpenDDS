@@ -61,11 +61,14 @@ my $SUB = PerlDDS::create_process("$DDS_ROOT/tests/DCPS/Messenger/subscriber",
                                   $sub_opts);
 
 PerlACE::add_lib_path("$DDS_ROOT/java/tests/messenger/messenger_idl");
+if ($PerlACE::Process::ExeSubDir ne "./") {
+  PerlACE::add_lib_path("$DDS_ROOT/java/tests/messenger/messenger_idl/$PerlACE::Process::ExeSubDir");
+}
 PerlACE::add_lib_path("$DDS_ROOT/tests/DCPS/Messenger");
 
 my $PUB = new PerlDDS::Process_Java('TestPublisher', $pub_opts,
-            ["$DDS_ROOT/java/tests/messenger/messenger_idl/".
-             'messenger_idl_test.jar']);
+            ["$DDS_ROOT/java/tests/messenger/messenger_idl/messenger_idl_test.jar",
+             "publisher_idl_test.jar"]);
 
 if ($use_repo) {
     $DCPSREPO->Spawn();

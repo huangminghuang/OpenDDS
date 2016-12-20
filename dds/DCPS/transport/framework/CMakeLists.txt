@@ -1,0 +1,57 @@
+ace_target_cxx_sources(OpenDDS_Dcps
+  GLOB_HEADERS
+  SOURCE_FILES BuildChainVisitor.cpp
+               CopyChainVisitor.cpp
+               DataLink.cpp
+               DataLinkCleanupTask.cpp
+               DataLinkSet.cpp
+               DirectPriorityMapper.cpp
+               NetworkAddress.cpp
+               NullSynch.cpp
+               NullSynchStrategy.cpp
+               PacketRemoveVisitor.cpp
+               PerConnectionSynch.cpp
+               PerConnectionSynchStrategy.cpp
+               PoolSynch.cpp
+               PoolSynchStrategy.cpp
+               PriorityKey.cpp
+               PriorityMapper.cpp
+               QueueRemoveVisitor.cpp
+               ReactorSynch.cpp
+               ReactorSynchStrategy.cpp
+               ReceiveListenerSet.cpp
+               ReceiveListenerSetMap.cpp
+               ReceivedDataSample.cpp
+               RemoveAllVisitor.cpp
+               ScheduleOutputHandler.cpp
+               SendResponseListener.cpp
+               ThreadPerConRemoveVisitor.cpp
+               ThreadPerConnectionSendTask.cpp
+               ThreadSynch.cpp
+               ThreadSynchResource.cpp
+               ThreadSynchStrategy.cpp
+               ThreadSynchWorker.cpp
+               TransportClient.cpp
+               TransportConfig.cpp
+               TransportControlElement.cpp
+               TransportCustomizedElement.cpp
+               TransportDebug.cpp
+               TransportHeader.cpp
+               TransportImpl.cpp
+               TransportInst.cpp
+               TransportQueueElement.cpp
+               TransportReactorTask.cpp
+               TransportReassembly.cpp
+               TransportReceiveListener.cpp
+               TransportRegistry.cpp
+               TransportReplacedElement.cpp
+               TransportRetainedElement.cpp
+               TransportSendBuffer.cpp
+               TransportSendControlElement.cpp
+               TransportSendElement.cpp
+               TransportSendListener.cpp
+               TransportSendStrategy.cpp
+               TransportStrategy.cpp
+               TransportType.cpp
+)
+
