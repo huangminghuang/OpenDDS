@@ -28,7 +28,8 @@ BE_GlobalData *be_global = 0;
 
 BE_GlobalData::BE_GlobalData()
   : filename_(0),
-    do_server_side_(true)
+    do_server_side_(true),
+    gen_java_list_(false)
 {
   // At this point, the FE has been initialized.  We can
   // now instruct it that we want to preserve c++ keywords.
@@ -141,7 +142,8 @@ BE_GlobalData::open_streams(const char *filename)
 
   string filebase(filename);
   filebase.erase(filebase.rfind('.'));
-  size_t idx = filebase.rfind(ACE_DIRECTORY_SEPARATOR_CHAR);
+  size_t idx = filebase.find_last_of("/\\");
+
 
   if (idx != string::npos) {
     filebase = filebase.substr(idx + 1);
@@ -205,6 +207,9 @@ void
 BE_GlobalData::parse_args(long &i, char **av)
 {
   switch (av[i][1]) {
+  case 'j':
+    gen_java_list_ = true;
+    break;
   case 'S':
 
     // Suppress ...
@@ -339,4 +344,39 @@ BE_GlobalData::get_include_block(BE_GlobalData::stream_enum_t which)
   }
 
   return ret;
+}
+
+bool
+BE_GlobalData::write_java_file(const std::string& fileName, const std::string &content)
+{
+
+  static char cwd[1024];
+  if (cwd[0] == '\0') {
+    ::getcwd(cwd, 1024);
+    ::strcat(cwd, ACE_DIRECTORY_SEPARATOR_STR_A);
+  }
+
+  if (gen_java_list_) {
+    java_outputs_ += cwd;
+    java_outputs_ += (fileName + "\n");
+  }
+  return writeFile(fileName.c_str(), content);
+}
+
+void
+BE_GlobalData::gen_java_list()
+{
+  if (!gen_java_list_)
+    return;
+
+  std::string filebase(this->filename_);
+  size_t idx = filebase.find_last_of("/\\");
+
+  if (idx != string::npos) {
+    filebase = filebase.substr(idx + 1);
+  }
+  filebase += ".java.list";
+
+  std::ofstream fout(filebase.c_str());
+  fout << java_outputs_;
 }
