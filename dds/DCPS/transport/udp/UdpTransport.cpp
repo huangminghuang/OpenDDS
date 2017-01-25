@@ -159,7 +159,7 @@ UdpTransport::configure_i(UdpInst& config)
   if (config.local_address() == ACE_INET_Addr () &&
       !TheServiceParticipant->default_address ().empty ()) {
 
-    config.local_address(0, TheServiceParticipant->default_address ().c_str ());
+    config.local_address(0, TheServiceParticipant->default_address ().c_str (), config.local_address().get_type());
   }
 
   // Our "server side" data link is created here, similar to the acceptor_
