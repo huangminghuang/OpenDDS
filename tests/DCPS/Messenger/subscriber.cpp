@@ -30,12 +30,19 @@
 #include "DataReaderListener.h"
 #include "MessengerTypeSupportImpl.h"
 #include "Args.h"
+#include "subscriber.h"
+#include "ace/Init_ACE.h"
 
 bool reliable = false;
 bool wait_for_acks = false;
 
+void init_sub()
+{
+  ACE::init();
+}
+
 int
-ACE_TMAIN(int argc, ACE_TCHAR *argv[])
+run_sub(int argc, ACE_TCHAR *argv[])
 {
   int status = 0;
   try {
@@ -165,4 +172,9 @@ ACE_TMAIN(int argc, ACE_TCHAR *argv[])
   }
 
   return status;
+}
+
+void fini_sub()
+{
+  ACE::fini();
 }

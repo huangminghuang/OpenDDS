@@ -44,6 +44,7 @@ ace_add_exe(DDS_Messenger_Subscriber
 ace_target_cxx_sources(DDS_Messenger_Subscriber
   SOURCE_FILES DataReaderListener.cpp
                subscriber.cpp
+               sub_main.cpp
   HEADER_FILES DataReaderListener.h
 )
 
