@@ -57,7 +57,7 @@ OpenDDS::DCPS::TransportReactorTask::~TransportReactorTask()
     delete this->proactor_;
   }
 #endif
-
+  this->reactor_->close();
   delete this->reactor_;
 }
 
