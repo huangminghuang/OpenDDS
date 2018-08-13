@@ -184,8 +184,8 @@ jobs:
     - <<: *build-staging
       ## static debug build would cause out of disk space error on travis ci
       env: &Static-Env "MATRIX_NAME=Static DEBUG=0"
-    - <<: *build-staging
-      <<: *android-Env
+    # - <<: *build-staging
+    #   <<: *android-Env
     - <<: *build-staging
       env: &NoBit-Env "MATRIX_NAME=NoBit"
     - <<: *build-staging
