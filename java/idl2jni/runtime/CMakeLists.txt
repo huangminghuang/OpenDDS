@@ -8,12 +8,9 @@ dds_add_jar(i2jrt
           i2jrt/TAOObject.java
   VERSION ${OpenDDS_VERSION}
   OUTPUT_DIR ${CMAKE_BINARY_DIR}/lib
+  GENERATE_NATIVE_HEADERS i2jrt-native
 )
 
-create_javah(GENERATED_FILES i2jrt_headers
-  CLASSES i2jrt.ORB i2jrt.TAOLocalObject i2jrt.TAOObject
-  CLASSPATH i2jrt
-)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
@@ -30,6 +27,7 @@ ace_add_lib(idl2jni_runtime
                              $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
                              $<INSTALL_INTERFACE:${OpenDDS_INSTALL_DIR}/java/idl2jni/runtime>
   PUBLIC_LINK_LIBRARIES TAO ${jnilibs}
+  LINK_LIBRARIES i2jrt-native
 )
 
 ace_target_cxx_sources(idl2jni_runtime
@@ -40,5 +38,4 @@ ace_target_cxx_sources(idl2jni_runtime
                idl2jni_jni.h
                idl2jni_runtime_Export.h
                idl2jni_runtime.h
-               ${i2jrt_headers}
 )

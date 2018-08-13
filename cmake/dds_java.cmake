@@ -95,21 +95,28 @@ endfunction()
 
 
 function(dds_add_jar _target_name)
-  set(oneValueArgs OUTPUT_NAME VERSION OUTPUT_DIR FOLDER ENTRY_POINT)
+  set(oneValueArgs OUTPUT_NAME VERSION OUTPUT_DIR FOLDER ENTRY_POINT GENERATE_NATIVE_HEADERS DESTINATION)
   set(multiValueArgs INCLUDE_JARS SOURCES)
   cmake_parse_arguments(_arg "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
   if (_arg_ENTRY_POINT)
-    set(entry_point ENTRY_POINT ${_arg_ENTRY_POINT})
+    set(forward_args ENTRY_POINT ${_arg_ENTRY_POINT})
   endif()
+  
+  if (_arg_GENERATE_NATIVE_HEADERS)
+    set(forward_args ${forward_args} GENERATE_NATIVE_HEADERS ${_arg_GENERATE_NATIVE_HEADERS})
+    if (_arg_DESTINATION) 
+      set(forward_args ${forward_args} DESTINATION ${_arg_DESTINATION})
+    endif(_arg_DESTINATION)
+  endif(_arg_GENERATE_NATIVE_HEADERS)
 
   add_jar(${_target_name}
     OUTPUT_NAME "${_arg_OUTPUT_NAME}"
     OUTPUT_DIR "${_arg_OUTPUT_DIR}"
     VERSION ${_arg_VERSION}
-    ${entry_point}
     INCLUDE_JARS ${_arg_INCLUDE_JARS}
     SOURCES ${_arg_SOURCES}
+    ${forward_args}
   )
 
   if (NOT _arg_FOLDER AND ACEUTIL_TOP_LEVEL_FOLDER_DIR AND ACEUTIL_TOP_LEVEL_FOLDER_NAME)

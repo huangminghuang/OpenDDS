@@ -1,4 +1,6 @@
-
-file(READ ${INPUT} filecontent)
-string(REPLACE "<jni.h>" "\"idl2jni_jni.h\"" filecontent "${filecontent}")
-file(WRITE "${OUTPUT}" "${filecontent}")
+file(GLOB headers *.h)
+foreach(fname ${headers})
+  file(READ ${fname} filecontent)
+  string(REPLACE "<jni.h>" "\"idl2jni_jni.h\"" filecontent "${filecontent}")
+  file(WRITE "${fname}" "${filecontent}")
+endforeach()

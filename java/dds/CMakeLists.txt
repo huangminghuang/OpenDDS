@@ -74,46 +74,17 @@ dds_add_jar(OpenDDS_DCPS_jar
           OpenDDS/DCPS/transport/TransportException.java
           OpenDDS/DCPS/transport/UnableToCreateException.java
           ${OpenDDS_Dcps_Java_idl_JAVA_OUTPUTS}
+  GENERATE_NATIVE_HEADERS OpenDDS_DCPS_jar-native
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/javah
 )
 
-
-file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/javah)
-
-create_javah(GENERATED_FILES OpenDDS_DCPS_jar_headers
-  CLASSES OpenDDS.DCPS.TheParticipantFactory
-          OpenDDS.DCPS.TheServiceParticipant
-          DDS.PARTICIPANT_QOS_DEFAULT
-          DDS.TOPIC_QOS_DEFAULT
-          DDS.PUBLISHER_QOS_DEFAULT
-          DDS.DATAWRITER_QOS_DEFAULT
-          DDS.SUBSCRIBER_QOS_DEFAULT
-          DDS.DATAREADER_QOS_DEFAULT
-          DDS.DATAWRITER_QOS_USE_TOPIC_QOS
-          DDS.DATAREADER_QOS_USE_TOPIC_QOS
-          DDS.WaitSet
-          DDS.GuardCondition
-          OpenDDS.DCPS.transport.TheTransportRegistry
-          OpenDDS.DCPS.transport.TcpInst
-          OpenDDS.DCPS.transport.UdpInst
-          OpenDDS.DCPS.transport.MulticastInst
-          OpenDDS.DCPS.transport.RtpsUdpInst
-          OpenDDS.DCPS.transport.TransportInst
-          OpenDDS.DCPS.transport.TransportConfig
-  CLASSPATH "${OPENDDS_JARS}"
-  OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/javah
+add_custom_target(OpenDDS_DCPS_jar_headers
+  COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_SOURCE_DIR}/replace_jni_h.cmake
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/javah
+  COMMENT "replace jni headers"
 )
 
-
-foreach(input ${OpenDDS_DCPS_jar_headers})
-  file(RELATIVE_PATH output ${CMAKE_CURRENT_BINARY_DIR}/javah ${input})
-  set(output ${CMAKE_CURRENT_BINARY_DIR}/${output})
-  add_custom_command(
-    OUTPUT ${output}
-    DEPENDS ${input}
-    COMMAND ${CMAKE_COMMAND} "-DINPUT=${input}" "-DOUTPUT=${output}" -P ${CMAKE_CURRENT_SOURCE_DIR}/replace_jni_h.cmake
-  )
-  list(APPEND OpenDDS_DCPS_Java_headers ${output})
-endforeach()
+add_dependencies(OpenDDS_DCPS_jar_headers OpenDDS_DCPS_jar-native)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_INCLUDE_CURRENT_DIR_IN_INTERFACE ON)
@@ -132,7 +103,10 @@ ace_add_lib(OpenDDS_DCPS_Java
                         OpenDDS_Rtps_Udp
                         TAO_PortableServer
                         tao_java
+  LINK_LIBRARIES OpenDDS_DCPS_jar-native
 )
+
+add_dependencies(OpenDDS_DCPS_Java OpenDDS_DCPS_jar_headers)
 
 ace_target_cxx_sources(OpenDDS_DCPS_Java
   SOURCE_FILES DDS_QoS_jni.cpp
@@ -144,6 +118,5 @@ ace_target_cxx_sources(OpenDDS_DCPS_Java
 if (TARGET OpenDDS_DCPS_Java)
   target_sources(OpenDDS_DCPS_Java PRIVATE
     ${OpenDDS_Dcps_Java_idl_CXX_OUTPUTS}
-    ${OpenDDS_DCPS_Java_headers}
   )
 endif()
