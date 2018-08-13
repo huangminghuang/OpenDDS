@@ -165,8 +165,10 @@ jobs:
     install:
       - brew update
       - brew install ninja awscli
+      - brew upgrade cmake
       - export CXX=c++
-      - pip2 install glob2
+      - curl https://bootstrap.pypa.io/get-pip.py | sudo python
+      - pip install --user glob2
     env: "MATRIX_NAME=MacOS"
 
   include:
