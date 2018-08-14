@@ -3,6 +3,9 @@
 #pragma once
 #endif /* ACE_LACKS_PRAGMA_ONCE */
 
+#ifndef SUBSCRIBER_H_C13C143D
+#define SUBSCRIBER_H_C13C143D
+
 #include "dds/DdsDcpsDomainC.h"
 #include "dds/DdsDcpsSubscriptionExtC.h"
 #include "dds/DCPS/transport/framework/TransportImpl_rch.h"
@@ -45,4 +48,5 @@ class Subscriber {
 };
 
 } // End of namespace Test
+#endif /* end of include guard: SUBSCRIBER_H_C13C143D */
 

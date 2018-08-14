@@ -11,6 +11,9 @@
 #pragma once
 #endif /* ACE_LACKS_PRAGMA_ONCE */
 
+#ifndef COMMON_H_0179F7C7
+#define COMMON_H_0179F7C7
+
 #include "ace/SString.h"
 
 #define MY_DOMAIN 111
@@ -48,3 +51,4 @@ extern ACE_Time_Value TEST_DURATION_SEC; // seconds
 
 // default to using TCP
 extern unsigned int threshold_liveliness_lost;
+#endif /* end of include guard: COMMON_H_0179F7C7 */
