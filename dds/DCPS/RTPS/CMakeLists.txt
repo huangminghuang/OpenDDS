@@ -15,6 +15,7 @@ ace_target_cxx_sources(OpenDDS_Rtps
                Sedp.cpp
                Spdp.cpp
                md5.cpp
+               BaseMessageUtils.cpp
 )
 
 

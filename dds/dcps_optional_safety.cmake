@@ -34,6 +34,7 @@ if (OPENDDS_SAFETY_PROFILE)
     DDS_IDL_FLAGS ${dcps_flags} -SI -Lspcpp
     IDL_FILES DdsDcpsGuid.idl
               DdsDcpsInfoUtils.idl
+              DdsSecurityParams.idl
   )
 
   dds_idl_sources(
@@ -78,6 +79,8 @@ else(OPENDDS_SAFETY_PROFILE)
       DDS_IDL_FLAGS -SI ${dcps_flags}
       TAO_IDL_FLAGS ${dcps_tao_flags}
       IDL_FILES DdsDcpsInfoUtils.idl
+                DdsSecurityParams.idl
+                DdsSecurityCore.idl
     )
   else(OPENDDS_HAS_BUILT_IN_TOPICS)
     dds_idl_sources(
@@ -87,6 +90,8 @@ else(OPENDDS_SAFETY_PROFILE)
       IDL_FILES DdsDcpsGuid.idl
                 DdsDcpsCore.idl
                 DdsDcpsInfoUtils.idl
+                DdsSecurityParams.idl
+                DdsSecurityCore.idl
     )
 
    dds_idl_sources(
