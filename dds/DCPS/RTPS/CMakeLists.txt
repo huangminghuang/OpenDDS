@@ -25,7 +25,6 @@ if (OPENDDS_SAFETY_PROFILE)
     NO_TAO_IDL
     DDS_IDL_FLAGS -Wb,export_macro=OpenDDS_Rtps_Export -Wb,export_include=dds/DCPS/RTPS/rtps_export.h -SI -Lspcpp
     IDL_FILES RtpsCore.idl
-              RtpsSecurity.idl
   )
 else()
   dds_idl_sources(
