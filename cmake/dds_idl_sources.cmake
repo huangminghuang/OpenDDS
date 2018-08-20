@@ -265,6 +265,7 @@ function(dds_idl_sources)
   source_group("Generated Files" FILES ${_idl_OUTPUT_FILES} )
   source_group("IDL Files" FILES ${_arg_IDL_FILES})
   set_source_files_properties(${_arg_IDL_FILES} ${_idl_HEADER_FILES} PROPERTIES HEADER_FILE_ONLY ON)
+  set_property(SOURCE ${_idl_CPP_FILES} PROPERTY SKIP_AUTOGEN ON)
 
   set(DDS_IDL_TYPESUPPORT_IDLS ${_idl_TYPESUPPORT_IDLS} PARENT_SCOPE)
   set(DDS_IDL_JAVA_OUTPUTS ${_idl_JAVA_OUTPUTS} PARENT_SCOPE)
